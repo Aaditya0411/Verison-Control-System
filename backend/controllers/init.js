@@ -3,7 +3,7 @@ const { log } = require('console');
 const path =  require("path");
 
 async function initRepo(){
-    const repoPath  = path.resolve(process.cwd() , " mygit ");
+    const repoPath  = path.resolve(process.cwd() , "mygit");
     const commitsPath = path.join(repoPath , "commits");
 
     try {
