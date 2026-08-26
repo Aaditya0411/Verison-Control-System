@@ -10,7 +10,7 @@ async function initRepo(){
         await fs.mkdir(repoPath , { recursive: true });
         await fs.mkdir(commitsPath , { recursive: true });
         await fs.writeFile(path.join(repoPath , "config.json") , JSON.stringify({ bucket :  process.env.S3_BUCKET}));
-        console.log("Repository initialised! ");
+        console.log("Repository initialised and created! ");
         
         
     } catch (error) {
