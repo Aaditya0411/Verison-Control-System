@@ -59,7 +59,7 @@ yargs(hideBin(process.argv))
     )
     .command(
         "commit <message>",
-        "Commit stage changes",
+        "Commit stage changes file",
         (yargs) => {
             yargs.positional(
                 "message", {
