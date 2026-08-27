@@ -27,7 +27,9 @@ yargs(hideBin(process.argv))
                     type: "string"
                 })
         },
-        addRepo
+        (argv) => {
+            addRepo(argv.file);
+        }
     )
     .command(
         "push <remote> <branch>",
@@ -68,7 +70,9 @@ yargs(hideBin(process.argv))
             }
             )
         },
-        commitRepo
+        (argv) => {
+            commitRepo(argv.message);
+        }
     )
     .command(
         "revert <commit>",
