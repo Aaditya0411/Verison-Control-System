@@ -14,7 +14,7 @@ async function initRepo(){
         
         
     } catch (error) {
-        console.error( " Error intialising repository " , err);
+        console.error( " Error intialising repository " , error);
         
     }
     
