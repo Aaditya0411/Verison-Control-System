@@ -1,3 +1,12 @@
+const express = require('express');
+const dotenv = require('dotenv');
+const cors = require("cors");
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const http = require('http');
+
+dotenv.config();
+
 const yargs = require("yargs");
 const { hideBin } = require('yargs/helpers');
 
@@ -7,9 +16,16 @@ const { pushRepo } = require('./controllers/push.js');
 const { pullRepo } = require('./controllers/pull.js');
 const { commitRepo } = require('./controllers/commit.js');
 const { revertRepo } = require('./controllers/revert.js');
+const { log } = require('console');
 
 
 yargs(hideBin(process.argv))
+    .command(
+        "start",
+        "Start a new Server",
+        {},
+        startServer
+    )
     .command(
         "init",
         "Initialise a new repository",
@@ -89,3 +105,20 @@ yargs(hideBin(process.argv))
     )
 
     .demandCommand(1, " You need at least one command ").help().argv;
+
+function startServer() {
+    const app = express();
+    const port = process.env.PORT || 3000;
+
+    app.use(bodyParser.json());
+    app.use(express.json());
+
+    const mongoURI = process.env.MONGODB_URI;
+
+
+    mongoose
+        .connect(mongoURI)
+        .then(() => console.log("MongoDB connected !"))
+        .catch((err) => console.error("Unable to conect : ", err));
+
+}

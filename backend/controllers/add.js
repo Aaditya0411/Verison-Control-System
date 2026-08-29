@@ -14,7 +14,7 @@ async  function addRepo(filePath) {
          
 
     } catch (error) {
-        console.error( "Error adding file : " , err);
+        console.error( "Error adding file : " , error);
         
     }
     
