@@ -204,9 +204,7 @@ async function updateUserProfile(req, res) {
 
     } catch (error) {
         console.error("Error during updating:", error.message);
-        res.status(500).json({
-            message: "Server Error"
-        });
+        res.status(500).json({message: "Server Error"});
     }
 }
 

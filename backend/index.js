@@ -122,27 +122,29 @@ function startServer() {
 
 
     mongoose
-        .connect(mongoURI)
+        .connect(mongoURI, {
+            dbName: "VersionControlSystem"
+        })
         .then(() => console.log("MongoDB connected !"))
-        .catch((err) => console.error("Unable to conect : ", err));
+        .catch((err) => console.error("Unable to connect : ", err));
+        
+    app.use(cors({ origin: "*" }));
 
-    app.use(cors({origin: "*"}));
+    app.use("/", mainRouter);
 
-    app.use("/" , mainRouter);
 
-  
 
-    let user  = "test";
-    const  httpServer = http.createServer(app);
-    const io = new Server( httpServer , {
-        cors : {
+    let user = "test";
+    const httpServer = http.createServer(app);
+    const io = new Server(httpServer, {
+        cors: {
             origin: "*",
-            methods: ["GET" , "POST"]
+            methods: ["GET", "POST"]
         },
     });
 
-    io.on("connection" , (socket) => {
-        socket.on("joinRoom" , (userID) => {
+    io.on("connection", (socket) => {
+        socket.on("joinRoom", (userID) => {
             user = userID;
             console.log("====");
             console.log(user);
@@ -152,13 +154,13 @@ function startServer() {
     });
 
     const db = mongoose.connection;
-    db.once("open" , async () => {
+    db.once("open", async () => {
         console.log("CRUD operation called");
         // CRUD operations
-        
+
     })
 
-    httpServer.listen(port , () => {
+    httpServer.listen(port, () => {
         console.log(`Server is Listening on Port ${port}`);
     });
 
