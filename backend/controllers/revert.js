@@ -1,7 +1,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const {promisify} = require("util");
-const { s3, S3_BUCKET } = require('../config/aws-config');
+const { s3, S3_BUCKET } = require('../controllers/config/aws-config');
 const { log } = require('console');
 
 const readdir = promisify(fs.readdir);

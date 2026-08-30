@@ -4,7 +4,12 @@ const cors = require("cors");
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const http = require('http');
+const { Server } = require('socket.io');
+const dns = require('dns');
+const mainRouter = require('./routes/main.router.js')
+const userRouter = require('./routes/user.router.js')
 
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
 dotenv.config();
 
 const yargs = require("yargs");
@@ -120,5 +125,42 @@ function startServer() {
         .connect(mongoURI)
         .then(() => console.log("MongoDB connected !"))
         .catch((err) => console.error("Unable to conect : ", err));
+
+    app.use(cors({origin: "*"}));
+
+    app.use("/" , mainRouter);
+
+  
+
+    let user  = "test";
+    const  httpServer = http.createServer(app);
+    const io = new Server( httpServer , {
+        cors : {
+            origin: "*",
+            methods: ["GET" , "POST"]
+        },
+    });
+
+    io.on("connection" , (socket) => {
+        socket.on("joinRoom" , (userID) => {
+            user = userID;
+            console.log("====");
+            console.log(user);
+            console.log("====");
+            socket.join(userID);
+        });
+    });
+
+    const db = mongoose.connection;
+    db.once("open" , async () => {
+        console.log("CRUD operation called");
+        // CRUD operations
+        
+    })
+
+    httpServer.listen(port , () => {
+        console.log(`Server is Listening on Port ${port}`);
+    });
+
 
 }
