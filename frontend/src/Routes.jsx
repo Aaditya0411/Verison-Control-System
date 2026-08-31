@@ -8,7 +8,7 @@ import Login from './components/auth/Login'
 import Signup from './components/auth/Signup'
 
 // auth context
-import { useAuth } from './authContent';
+import { useAuth } from './authContext';
 
 const ProjectRoutes = () => {
     const { currentUser, setCurrentUser } = useAuth();
@@ -23,7 +23,7 @@ const ProjectRoutes = () => {
 
         }
 
-        if (!userIdFromStorage && !["/auth", "/singup"].includes(window.location.pathname)) {
+        if (!userIdFromStorage && !["/auth", "/signup"].includes(window.location.pathname)) {
             navigate("/auth");
         }
 

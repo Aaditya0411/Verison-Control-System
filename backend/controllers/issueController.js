@@ -7,7 +7,7 @@ const Issue = require('../models/issueModel');
 // CREATE ISSUE
 async function createIssue(req, res) {
     const { title, description } = req.body;
-    const { id } = req.params;
+    const id = req.params.id || req.body.id || req.body.repository;
 
     try {
 

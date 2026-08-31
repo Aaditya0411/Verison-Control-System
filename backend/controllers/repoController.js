@@ -110,7 +110,7 @@ async function fetchRepositoryByName(req, res) {
 }
 
 async function fetchRepositoryForCurrentUser(req, res) {
-    const userId = req.user;
+    const userId = req.params.userID || req.user;
 
     try {
         const repositories = await Repository.find({

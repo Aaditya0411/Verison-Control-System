@@ -1,0 +1,116 @@
+.login-wrapper {
+  color: #f1f6fd;
+  min-height: 100vh;
+  width: 100%;
+  font-family: "Asap", sans-serif;
+  background-color: #0c1116;
+  padding: 20px;
+}
+
+.login-logo-container {
+  padding: 20px 0px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-login {
+  width: 56px;
+  height: auto;
+}
+
+.login-box-wrapper {
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.login-box {
+  padding: 24px;
+  width: 100%;
+  min-height: 280px;
+  border-radius: 12px;
+  background-color: #161a23;
+  border: 1px solid #30363d;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.input {
+  width: 100%;
+  height: 40px;
+  background-color: #0c1116;
+  border-radius: 6px;
+  padding: 0 1rem;
+  border: 1px solid #30363d;
+  font-size: 0.95rem;
+  color: whitesmoke;
+  transition: border-color 0.2s ease;
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #f1f6fd;
+}
+
+.input:hover,
+.input:focus {
+  border-color: #58a6ff;
+  outline: none;
+}
+
+.submit-btn {
+  background-color: #238636;
+  border: none;
+  width: 100%;
+  border-radius: 6px;
+  height: 40px;
+  color: #f1f6fd;
+  font-weight: 700;
+  padding: 0 1rem;
+}
+
+.submit-btn:hover {
+  background-color: #2ea043;
+  cursor: pointer;
+}
+
+.login-btn {
+  width: 100% !important;
+  margin-top: 10px;
+}
+
+.pass-box {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  padding: 16px;
+  border: 1px solid #30363d;
+  background-color: #161a23;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.pass-box p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.pass-box a {
+  color: #58a6ff;
+  font-weight: 600;
+}

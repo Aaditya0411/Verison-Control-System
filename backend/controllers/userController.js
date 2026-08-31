@@ -21,13 +21,19 @@ async function connectClient() {
 async function signup(req, res) {
     const { username, password, email } = req.body;
     try {
+        if (!username || !email || !password) {
+            return res.status(400).json({ message: "All fields are required!" });
+        }
+
         await connectClient();
         const db = client.db("VersionControlSystem");
         const usersCollection = db.collection("users");
 
-        const user = await usersCollection.findOne({ username });
-        if (user) {
-            return res.status(400).json({ message: "User already exists !" });
+        const existingUser = await usersCollection.findOne({
+            $or: [{ username }, { email }]
+        });
+        if (existingUser) {
+            return res.status(400).json({ message: "Username or Email already exists!" });
         }
 
         const salt = await bcrypt.genSalt(10);
@@ -45,24 +51,28 @@ async function signup(req, res) {
         const result = await usersCollection.insertOne(newUser);
 
         const token = jwt.sign({ id: result.insertedId }, process.env.JWT_SECRET_KEY, { expiresIn: "1h" });
-        res.json({ token });
+        res.json({ token, userId: result.insertedId });
     } catch (err) {
         console.error("Error during SignUp : ", err.message);
-        res.status(500).send("Server error")
-
+        res.status(500).json({ message: "Server error during signup" });
     }
-
-
 }
 
 async function Login(req, res) {
     const { email, password } = req.body;
     try {
+        if (!email || !password) {
+            return res.status(400).json({ message: "Email and password are required!" });
+        }
+
         await connectClient();
         const db = client.db("VersionControlSystem");
         const usersCollection = db.collection("users");
 
-        const user = await usersCollection.findOne({ email });
+        // Allow logging in with either email OR username
+        const user = await usersCollection.findOne({
+            $or: [{ email: email }, { username: email }]
+        });
         if (!user) {
             return res.status(400).json({ message: "Invalid credentials" });
         }
@@ -77,7 +87,7 @@ async function Login(req, res) {
 
     } catch (error) {
         console.error("Error during login :", error.message);
-        res.status(500).send("Server Error");
+        res.status(500).json({ message: "Server Error during login" });
     }
 }
 

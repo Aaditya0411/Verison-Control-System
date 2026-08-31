@@ -1,11 +1,7 @@
 const fs = require('fs').promises;
 const path = require('path');
-const {promisify} = require("util");
 const { s3, S3_BUCKET } = require('../controllers/config/aws-config');
 const { log } = require('console');
-
-const readdir = promisify(fs.readdir);
-const copyFile = promisify(fs.copyFile);
 
 
 async function revertRepo(commitID) {
@@ -15,18 +11,18 @@ async function revertRepo(commitID) {
     try {
         
         const commitDir = path.join(commitsPath , commitID);
-        const files = await readdir(commitDir);
+        const files = await fs.readdir(commitDir);
         const parentDir = path.resolve ( repoPath, "..");
 
         for(const file of files){
-            await copyFile(path.join(commitDir , file ) ,  path.join(parentDir , file));
+            await fs.copyFile(path.join(commitDir , file ) ,  path.join(parentDir , file));
         }
 
         console.log(`Commit ${commitID} reverted successfully`);
         
 
     } catch (error) {
-        console.error("Unable to revert : " , err);
+        console.error("Unable to revert : " , error);
         
     }
 
