@@ -6,42 +6,37 @@ Full-stack Version Control System application built with Node.js, Express, Mongo
 
 ## 🌐 Live Application Link
 
-- **Live URL:** [http://52.202.129.198:3002/](http://52.202.129.198:3002/)
+- **Live Application URL:** [http://52.202.129.198:3002/](http://52.202.129.198:3002/)
 - **Static Elastic IP:** `52.202.129.198`
+- **Port:** `3002`
 
 ---
 
-## 📖 EC2 Restart & Quick Start Instructions
+## ⚡ Quick Start Guide (Jab bhi EC2 Instance Start karo)
 
-Jab bhi aap AWS EC2 Instance ko **Start** karo:
+Jab bhi aap AWS EC2 Instance ko **Start** karo, bas ye simple steps follow karo:
 
-1. **EC2 me SSH karein:**
-   ```bash
-   cd ~/Revix-Backend
-   git pull origin main
-   node index.js start
-   ```
+### 1. EC2 me SSH Terminal kholein
+SSH terminal (ya AWS EC2 Instance Connect) ke zariye EC2 instance me login karein.
 
-2. **Browser me kholein:**
-   👉 [http://52.202.129.198:3002/](http://52.202.129.198:3002/)
-
----
-
-## 🔄 24/7 PM2 Auto-Restart (Optional 1-Time Setup)
-
-Server ko hamesha background me chalu rakhne ke liye:
+### 2. Backend Server Start karein
+Terminal par ye commands chalayein:
 
 ```bash
 cd ~/Revix-Backend
-npm install -g pm2
-pm2 start index.js --name "revix-backend" -- start
-pm2 save
-pm2 startup
+git pull origin main
+node index.js start
 ```
+
+### 3. Browser me Open karein
+Browser me direct ye link kholein:
+👉 **[http://52.202.129.198:3002/](http://52.202.129.198:3002/)**
+
+*(Frontend aur Backend dono ek sath smooth chalenge!)*
 
 ---
 
-## 💻 Local Setup
+## 💻 Local Setup (Apne PC Par Chalane Ke Liye)
 
 ```bash
 # 1. Frontend Build

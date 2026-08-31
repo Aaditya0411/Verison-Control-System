@@ -36,22 +36,6 @@ Browser me direct ye link kholein:
 
 ---
 
-## 🔄 24/7 Background Running (PM2 Setup)
-
-Agar aap chahte ho ki terminal/SSH close karne ke baad bhi server **24/7 chalta rahe**, toh PM2 setup karein:
-
-```bash
-cd ~/Revix-Backend
-npm install -g pm2
-pm2 start index.js --name "revix-backend" -- start
-pm2 save
-pm2 startup
-```
-
-Iske baad terminal band karne par bhi server kabhi band nahi hoga!
-
----
-
 ## 💻 Local Development Setup (Apne PC Par Chalane Ke Liye)
 
 Apne local system par development aur testing ke liye:
