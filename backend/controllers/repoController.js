@@ -48,14 +48,14 @@ async function createRepository(req, res) {
 async function getAllRepositries(req, res) {
     try {
         const repositories = await Repository
-            .find({})
+            .find({ visibility: { $ne: false } })
             .populate("owner")
             .populate("issues");
 
-        res.json(repositories)
+        res.json(repositories);
 
     } catch (error) {
-        console.error("Error during repository creation :", error.message);
+        console.error("Error during repository fetching :", error.message);
         res.status(500).json({ message: "Server Error" });
 
     }
@@ -79,7 +79,7 @@ async function fetchRepositoryByID(req, res) {
 
         res.json(repository);
     } catch (error) {
-        console.error("Error during repository creation :", error.message);
+        console.error("Error during repository fetching :", error.message);
         res.status(500).json({ message: "Server Error" });
     }
 }
@@ -115,33 +115,26 @@ async function fetchRepositoryForCurrentUser(req, res) {
     try {
         const repositories = await Repository.find({
             owner: userId
-        });
-
-        if (!repositories || repositories.length === 0) {
-            return res.status(404).json({
-                message: "Repository not found"
-            });
-        }
+        }).populate("owner");
 
         res.json({
-            message: " Repositories Found",
-            repositories
-        })
+            message: "Repositories Found",
+            repositories: repositories || []
+        });
 
     } catch (error) {
         console.error("Error during repository fetching:", error.message);
         res.status(500).json({
-            message: "Server Error"
+            message: "Server Error",
+            repositories: []
         });
     }
-
-
 }
 
 async function updateRepositoryById(req, res) {
     const { id } = req.params;
 
-    const { content, description } = req.body;
+    const { content, description, removeContent } = req.body;
 
     try {
 
@@ -153,8 +146,17 @@ async function updateRepositoryById(req, res) {
             });
         }
 
-        repository.content.push(content);
-        repository.description = description;
+        if (Array.isArray(content)) {
+            repository.content = content;
+        } else if (removeContent) {
+            repository.content = repository.content.filter(item => item !== removeContent);
+        } else if (content && typeof content === "string") {
+            repository.content.push(content);
+        }
+
+        if (description !== undefined) {
+            repository.description = description;
+        }
 
         const updatedRepository = await repository.save();
 

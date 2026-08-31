@@ -1,39 +1,52 @@
 nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 24px;
   background-color: #161b22;
   border-bottom: 1px solid #30363d;
   width: 100%;
-  flex-wrap: wrap;
-  gap: 12px;
+  padding: 12px 24px;
 }
 
-nav img {
+.nav-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.brand-logo-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.brand-logo-link img {
   height: 40px;
   width: auto;
   border-radius: 8px;
   object-fit: contain;
 }
 
-nav div {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.brand-logo-link h3 {
+  margin: 0;
+  color: #f0f6fc;
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
-nav a {
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.nav-links a {
   text-decoration: none;
 }
 
-nav h3 {
-  margin: 0;
-  color: #f0f6fc;
-  font-size: 1.25rem;
-}
-
-nav p {
+.nav-links p {
   margin: 0;
   font-weight: 600;
   color: #c9d1d9;
@@ -41,25 +54,30 @@ nav p {
   transition: color 0.2s ease;
 }
 
-nav h3:hover,
-nav p:hover {
+.brand-logo-link:hover h3,
+.nav-links p:hover {
   color: #58a6ff;
   text-decoration: none;
 }
 
-@media screen and (max-width: 600px) {
+@media screen and (max-width: 650px) {
   nav {
     padding: 10px 16px;
+  }
+
+  .nav-container {
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
   }
 
-  nav div {
+  .nav-links {
     width: 100%;
     justify-content: space-between;
+    gap: 12px;
   }
 
-  nav p {
-    font-size: 0.875rem;
+  .nav-links p {
+    font-size: 0.85rem;
   }
 }

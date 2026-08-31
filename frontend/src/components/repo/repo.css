@@ -1,0 +1,506 @@
+.create-repo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+  min-height: calc(100vh - 70px);
+  background-color: #0c1116;
+}
+
+.create-repo-card {
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 32px;
+  width: 100%;
+  max-width: 600px;
+  color: #f0f6fc;
+}
+
+.create-repo-card h2 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  color: #f0f6fc;
+}
+
+.subtitle {
+  color: #8b949e;
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #30363d;
+  padding-bottom: 16px;
+}
+
+.error-banner {
+  background-color: rgba(248, 81, 73, 0.15);
+  border: 1px solid #f85149;
+  color: #f85149;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  color: #c9d1d9;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  background-color: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #f0f6fc;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #58a6ff;
+}
+
+.visibility-group .radio-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.radio-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #c9d1d9;
+}
+
+.radio-label input {
+  margin-top: 3px;
+}
+
+.create-btn {
+  background-color: #238636;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.create-btn:hover {
+  background-color: #2ea043;
+}
+
+.create-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* REPO DETAIL STYLES */
+.repo-detail-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 20px;
+  color: #f0f6fc;
+}
+
+.back-btn {
+  background-color: transparent;
+  border: 1px solid #30363d;
+  color: #58a6ff;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  margin-bottom: 16px;
+
+}
+
+.back-btn:hover {
+  background-color: #161b22;
+  border-color: #8b949e;
+}
+
+.repo-detail-header {
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.repo-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.repo-title {
+  margin: 0 0 8px 0;
+  font-size: 1.6rem;
+  color: #f0f6fc;
+}
+
+.owner-name {
+  color: #58a6ff;
+}
+
+.repo-desc {
+  color: #8b949e;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.repo-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.visibility-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+
+}
+
+.visibility-badge.public {
+  background-color: rgba(56, 139, 253, 0.15);
+  color: #58a6ff;
+  border: 1px solid rgba(56, 139, 253, 0.4);
+}
+
+.visibility-badge.private {
+  background-color: rgba(240, 136, 62, 0.15);
+  color: #f0883e;
+  border: 1px solid rgba(240, 136, 62, 0.4);
+}
+
+.toggle-btn {
+  background-color: #21262d;
+  color: #c9d1d9;
+  border: 1px solid #30363d;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.toggle-btn:hover {
+  background-color: #30363d;
+}
+
+.delete-btn {
+  background-color: rgba(248, 81, 73, 0.15);
+  color: #f85149;
+  border: 1px solid rgba(248, 81, 73, 0.4);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.delete-btn:hover {
+  background-color: #da3633;
+  color: white;
+}
+
+.repo-content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.repo-section {
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.repo-section h3 {
+  margin-top: 0;
+  border-bottom: 1px solid #30363d;
+  padding-bottom: 12px;
+  color: #f0f6fc;
+}
+
+.file-list, .issue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 120px;
+  margin-bottom: 20px;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #0d1117;
+  border: 1px solid #21262d;
+  padding: 10px 14px;
+  border-radius: 6px;
+}
+
+.file-delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.file-delete-btn:hover {
+  opacity: 1;
+}
+
+.issues-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #30363d;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+
+.issues-header h3 {
+  margin: 0;
+  border: none;
+  padding: 0;
+}
+
+.issue-filter-tabs {
+  display: flex;
+  gap: 4px;
+  background-color: #0d1117;
+  padding: 2px;
+  border-radius: 6px;
+  border: 1px solid #30363d;
+}
+
+.filter-tab {
+  background: none;
+  border: none;
+  color: #8b949e;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.filter-tab.active {
+  background-color: #21262d;
+  color: #f0f6fc;
+  font-weight: 600;
+}
+
+.issue-item {
+  background-color: #0d1117;
+  border: 1px solid #21262d;
+  padding: 12px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.issue-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.status-pill {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 8px;
+  font-weight: 600;
+}
+
+.status-pill.open {
+  background-color: rgba(46, 160, 67, 0.15);
+  color: #3fb950;
+  border: 1px solid rgba(46, 160, 67, 0.4);
+}
+
+.status-pill.closed {
+  background-color: rgba(137, 87, 229, 0.15);
+  color: #a371f7;
+  border: 1px solid rgba(137, 87, 229, 0.4);
+}
+
+.issue-action-btns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.issue-toggle-btn {
+  background-color: #21262d;
+  color: #c9d1d9;
+  border: 1px solid #30363d;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.issue-toggle-btn:hover {
+  background-color: #30363d;
+  color: white;
+}
+
+.issue-delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+.issue-delete-btn:hover {
+  opacity: 1;
+}
+
+.file-name {
+  color: #58a6ff;
+  font-weight: 500;
+  font-family: monospace;
+}
+
+.issue-item {
+  background-color: #0d1117;
+  border: 1px solid #21262d;
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.issue-title {
+  font-weight: 600;
+  color: #f0f6fc;
+  margin-bottom: 4px;
+}
+
+.issue-desc {
+  margin: 0;
+  color: #8b949e;
+  font-size: 0.85rem;
+}
+
+.empty-text {
+  color: #8b949e;
+  font-style: italic;
+}
+
+.add-file-form {
+  border-top: 1px solid #30363d;
+  padding-top: 16px;
+}
+
+.add-file-form h4 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: #c9d1d9;
+}
+
+.add-file-input-group {
+  display: flex;
+  gap: 10px;
+}
+
+.add-btn {
+  background-color: #238636;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* REPO TABS STYLES */
+.repo-tabs {
+  display: flex;
+  gap: 12px;
+  border-top: 1px solid #30363d;
+  margin-top: 16px;
+  padding-top: 16px;
+}
+
+.repo-tab-btn {
+  background: none;
+  border: none;
+  color: #8b949e;
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.repo-tab-btn:hover {
+  background-color: #21262d;
+  color: #f0f6fc;
+}
+
+.repo-tab-btn.active {
+  background-color: #21262d;
+  color: #58a6ff;
+  font-weight: 600;
+  border: 1px solid #30363d;
+}
+
+.repo-section.full-width {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.settings-block {
+  background-color: #0d1117;
+  border: 1px solid #21262d;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.settings-block h4 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  color: #f0f6fc;
+}
+
+.settings-block.danger-zone {
+  border-color: rgba(248, 81, 73, 0.4);
+  background-color: rgba(248, 81, 73, 0.05);
+}
+
+
