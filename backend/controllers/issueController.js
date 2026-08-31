@@ -206,10 +206,46 @@ async function getIssueById(req, res) {
 }
 
 
+// ADD COMMENT TO ISSUE
+async function commentOnIssue(req, res) {
+    const { id } = req.params;
+    const { text, user, username } = req.body;
+
+    try {
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ message: "Invalid Issue ID" });
+        }
+        if (!text) {
+            return res.status(400).json({ message: "Comment text is required" });
+        }
+
+        const issue = await Issue.findById(id);
+        if (!issue) {
+            return res.status(404).json({ message: "Issue not found" });
+        }
+
+        if (!issue.comments) issue.comments = [];
+        issue.comments.push({
+            user: user && mongoose.Types.ObjectId.isValid(user) ? new mongoose.Types.ObjectId(user) : undefined,
+            username: username || "User",
+            text,
+            createdAt: new Date()
+        });
+
+        const updated = await issue.save();
+        res.json({ message: "Comment added successfully!", issue: updated });
+    } catch (error) {
+        console.error("Error adding comment to issue:", error.message);
+        res.status(500).json({ message: "Server Error" });
+    }
+}
+
+
 module.exports = {
     createIssue,
     updateIssueByID,
     deleteIssueById,
     getAllIssues,
-    getIssueById
+    getIssueById,
+    commentOnIssue
 };

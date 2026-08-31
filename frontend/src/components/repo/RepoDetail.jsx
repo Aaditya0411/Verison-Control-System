@@ -1,638 +1,542 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+/* eslint-disable react/prop-types, react-hooks/exhaustive-deps */
+import { useEffect, useState } from "react";
+import React from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "../Navbar";
+import { api } from "../../lib/api";
+import "./repo.css";
 
-const RepoDetail = () => {
-  const { id } = useParams();
+export default function RepoDetail() {
+  const { repoId } = useParams();
   const navigate = useNavigate();
+  const currentUserId = localStorage.getItem("userId");
+
   const [repo, setRepo] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState("code");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  // Sub-tabs: 'code', 'issues', 'settings'
-  const [activeTab, setActiveTab] = useState("code");
+  // File Modal state
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [isEditingFile, setIsEditingFile] = useState(false);
+  const [fileCodeState, setFileCodeState] = useState("");
+  const [fileCommitMsg, setFileCommitMsg] = useState("");
 
-  // Add File state
-  const [fileName, setFileName] = useState("");
-  const [addingFile, setAddingFile] = useState(false);
+  // New file modal state
+  const [showNewFileModal, setShowNewFileModal] = useState(false);
+  const [newFilePath, setNewFilePath] = useState("");
+  const [newFileCode, setNewFileCode] = useState("");
+  const [newFileCommitMsg, setNewFileCommitMsg] = useState("");
 
-  // Issue state
-  const [issueTitle, setIssueTitle] = useState("");
-  const [issueDesc, setIssueDesc] = useState("");
-  const [creatingIssue, setCreatingIssue] = useState(false);
-  const [issueFilter, setIssueFilter] = useState("all");
+  // Settings state
+  const [description, setDescription] = useState("");
 
-  const fetchRepo = async () => {
+  // Issue creation state
+  const [issue, setIssue] = useState({ title: "", description: "" });
+
+  const canManage = repo && String(repo.owner?._id || repo.owner) === currentUserId;
+  const isStarred = repo && repo.stars && repo.stars.some(s => String(s._id || s) === currentUserId);
+
+  const load = async () => {
     try {
-      setLoading(true);
-      const res = await axios.get(`http://localhost:3002/repo/id/${id}`);
-      setRepo(res.data);
-      setLoading(false);
+      const data = await api.get(`/repo/id/${repoId}`);
+      setRepo(data);
+      setDescription(data.description || "");
     } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.message || "Failed to load repository.");
-      setLoading(false);
+      setError(err.message);
     }
   };
 
   useEffect(() => {
-    fetchRepo();
-  }, [id]);
+    load();
+  }, [repoId]);
 
-  // FILE OPERATIONS
-  const handleAddFile = async (e) => {
+  async function action(fn) {
+    setError("");
+    setBusy(true);
+    try {
+      await fn();
+      await load();
+      return true;
+    } catch (err) {
+      setError(err.message);
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const toggleStar = () => {
+    action(() => api.patch(`/repo/star/${repoId}`, { userId: currentUserId }));
+  };
+
+  const handleOpenFile = (filename) => {
+    const fileObj = (repo.files || []).find(f => f.path === filename);
+    const code = fileObj ? fileObj.code : (filename.toLowerCase().includes("readme") ? `# ${repo.name}\n\n${repo.description || ""}` : `// ${filename}`);
+    setSelectedFile(filename);
+    setFileCodeState(code);
+    setIsEditingFile(false);
+    setFileCommitMsg(`Update ${filename}`);
+  };
+
+  const handleSaveFileCode = (e) => {
     e.preventDefault();
-    if (!fileName.trim()) return;
-
-    try {
-      setAddingFile(true);
-      await axios.put(`http://localhost:3002/repo/update/${id}`, {
-        content: fileName.trim(),
-        description: repo.description,
-      });
-      setFileName("");
-      setAddingFile(false);
-      fetchRepo();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to add file.");
-      setAddingFile(false);
-    }
+    if (!selectedFile) return;
+    action(() => api.put(`/repo/update/${repoId}`, {
+      content: selectedFile,
+      fileCode: fileCodeState,
+      commitMessage: fileCommitMsg || `Update ${selectedFile}`,
+      authorId: currentUserId
+    })).then((ok) => {
+      if (ok) setIsEditingFile(false);
+    });
   };
 
-  const handleDeleteFile = async (fileToDelete) => {
-    if (!window.confirm(`Delete '${fileToDelete}' from repository?`)) return;
-
-    try {
-      setLoading(true);
-      await axios.put(`http://localhost:3002/repo/update/${id}`, {
-        removeContent: fileToDelete,
-      });
-      alert(`File '${fileToDelete}' deleted!`);
-      fetchRepo();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to delete file.");
-      setLoading(false);
-    }
-  };
-
-  // VISIBILITY & REPO DELETE
-  const handleToggleVisibility = async () => {
-    try {
-      await axios.patch(`http://localhost:3002/repo/toggle/${id}`);
-      fetchRepo();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to toggle visibility.");
-    }
-  };
-
-  const handleDeleteRepo = async () => {
-    if (!window.confirm("Are you sure you want to delete this repository? This cannot be undone.")) return;
-
-    try {
-      await axios.delete(`http://localhost:3002/repo/delete/${id}`);
-      alert("Repository deleted!");
-      navigate("/");
-    } catch (err) {
-      console.error(err);
-      alert("Failed to delete repository.");
-    }
-  };
-
-  // ISSUE OPERATIONS
-  const handleCreateIssue = async (e) => {
+  const handleCreateNewFile = (e) => {
     e.preventDefault();
-    if (!issueTitle.trim() || !issueDesc.trim()) return;
-
-    try {
-      setCreatingIssue(true);
-      await axios.post("http://localhost:3002/issue/create", {
-        id: id,
-        title: issueTitle.trim(),
-        description: issueDesc.trim(),
-      });
-      setIssueTitle("");
-      setIssueDesc("");
-      setCreatingIssue(false);
-      fetchRepo();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to create issue.");
-      setCreatingIssue(false);
-    }
+    if (!newFilePath.trim()) return;
+    action(() => api.put(`/repo/update/${repoId}`, {
+      content: newFilePath.trim(),
+      fileCode: newFileCode,
+      commitMessage: newFileCommitMsg || `Create ${newFilePath.trim()}`,
+      authorId: currentUserId
+    })).then((ok) => {
+      if (ok) {
+        setShowNewFileModal(false);
+        setNewFilePath("");
+        setNewFileCode("");
+        setNewFileCommitMsg("");
+      }
+    });
   };
 
-  const handleToggleIssueStatus = async (issueId, currentStatus) => {
-    const newStatus = currentStatus === "closed" ? "open" : "closed";
-    try {
-      await axios.put(`http://localhost:3002/issue/update/${issueId}`, {
-        status: newStatus,
-      });
-      fetchRepo();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to update issue status.");
-    }
+  const updateDescription = (e) => {
+    e.preventDefault();
+    action(() => api.put(`/repo/update/${repoId}`, { description }));
   };
 
-  const handleDeleteIssue = async (issueId) => {
-    if (!window.confirm("Are you sure you want to delete this issue?")) return;
-
-    try {
-      await axios.delete(`http://localhost:3002/issue/delete/${issueId}`);
-      alert("Issue deleted!");
-      fetchRepo();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to delete issue.");
-    }
+  const createIssue = (e) => {
+    e.preventDefault();
+    action(() => api.post("/issue/create", { ...issue, repository: repoId })).then(
+      (ok) => ok && setIssue({ title: "", description: "" })
+    );
   };
 
-  if (loading) {
-    return (
-      <div className="bg-background text-on-background font-body-base min-h-screen flex flex-col antialiased">
-        <Navbar />
-        <main className="flex-1 mt-16 p-lg max-w-7xl mx-auto w-full">
-          <p className="text-on-surface-variant">Loading repository details...</p>
-        </main>
-      </div>
-    );
-  }
+  if (!repo && !error) return <><Navbar /><main className="page"><div className="loading-card">Loading repository…</div></main></>;
+  if (!repo) return <><Navbar /><main className="page"><div className="notice notice-error">{error}</div><Link to="/" className="back-link">← Back to repositories</Link></main></>;
 
-  if (error || !repo) {
-    return (
-      <div className="bg-background text-on-background font-body-base min-h-screen flex flex-col antialiased">
-        <Navbar />
-        <main className="flex-1 mt-16 p-lg max-w-7xl mx-auto w-full">
-          <div className="p-sm mb-lg bg-error-container/20 border border-error-container rounded text-error">
-            {error || "Repository not found"}
-          </div>
-          <button
-            className="flex items-center gap-1 hover:text-primary transition-colors text-body-sm text-on-surface"
-            onClick={() => navigate("/")}
-          >
-            ← Back to Dashboard
-          </button>
-        </main>
-      </div>
-    );
-  }
-
-  const currentUserId = (localStorage.getItem("userId") || "").toString();
-  const ownerId = (repo.owner?._id || repo.owner || "").toString();
-  const isOwner = Boolean(currentUserId && ownerId && currentUserId === ownerId);
-
-  if (!repo.visibility && !isOwner) {
-    return (
-      <div className="bg-background text-on-background font-body-base min-h-screen flex flex-col antialiased">
-        <Navbar />
-        <main className="flex-1 mt-16 p-lg max-w-7xl mx-auto w-full">
-          <div className="p-sm mb-lg bg-error-container/20 border border-error-container rounded text-error">
-            🔒 This repository is Private. Access is restricted to the repository owner.
-          </div>
-          <button
-            className="flex items-center gap-1 hover:text-primary transition-colors text-body-sm text-on-surface"
-            onClick={() => navigate("/")}
-          >
-            ← Back to Dashboard
-          </button>
-        </main>
-      </div>
-    );
-  }
-
-  const filteredIssues = (repo.issues || []).filter((issue) => {
-    if (typeof issue === "string") return true;
-    if (issueFilter === "open") return issue.status !== "closed";
-    if (issueFilter === "closed") return issue.status === "closed";
-    return true;
-  });
+  const readmeFile = (repo.files || []).find(f => f.path.toLowerCase() === "readme.md") || (repo.content?.includes("README.md") ? { path: "README.md", code: `# ${repo.name}\n\n${repo.description || "No description provided."}` } : null);
 
   return (
-    <div className="bg-background text-on-background font-body-base min-h-screen flex flex-col antialiased">
+    <>
       <Navbar />
-
-      <main className="flex-1 overflow-y-auto mt-16 pt-lg pb-xl px-sm md:px-lg w-full max-w-7xl mx-auto">
-        {/* Repo Header Area */}
-        <header className="mb-lg">
-          <div className="flex items-center gap-sm mb-xs text-on-surface-variant">
-            <button
-              onClick={() => navigate("/")}
-              className="flex items-center gap-1 hover:text-primary transition-colors font-body-sm text-body-sm group"
-            >
-              <span className="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">
-                arrow_back
-              </span>
-              Back to Dashboard
-            </button>
+      <main className="page repo-page">
+        {/* Repo Header & Breadcrumbs */}
+        <div className="repo-header-bar">
+          <div className="repo-crumb">
+            <span className="owner-name">{repo.owner?.username || "you"}</span>
+            <span>/</span>
+            <h1>{repo.name}</h1>
+            <span className="visibility-badge">{repo.visibility === false ? "Private" : "Public"}</span>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-md mb-md">
-            <div className="flex items-center gap-md">
-              <div className="bg-surface-container-low p-2 rounded-lg border border-outline-variant">
-                <span
-                  className="material-symbols-outlined text-primary-container text-2xl"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  folder
-                </span>
-              </div>
-              <div>
-                <h1 className="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface flex items-center gap-2">
-                  <span className="text-on-surface-variant font-normal">
-                    {repo.owner?.username || "user"}
-                  </span>
-                  <span className="text-on-surface-variant font-normal">/</span>
-                  <span className="font-bold">{repo.name}</span>
-                </h1>
-              </div>
-              <span className="px-2 py-0.5 rounded-full border border-outline-variant text-on-surface-variant font-code-sm text-code-sm bg-surface-container-low ml-2">
-                {repo.visibility ? "Public" : "Private"}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-sm">
-              <button className="flex items-center gap-2 border border-outline-variant bg-surface hover:border-primary-container/50 text-on-surface px-3 py-1.5 rounded-md font-body-sm transition-all group">
-                <span className="material-symbols-outlined text-[18px] group-hover:text-primary-container">
-                  star
-                </span>
-                <span>Star</span>
-                <span className="bg-surface-container-highest px-1.5 rounded text-xs text-on-surface-variant ml-1">
-                  12
-                </span>
-              </button>
-              <button className="flex items-center gap-2 border border-outline-variant bg-surface hover:border-primary-container/50 text-on-surface px-3 py-1.5 rounded-md font-body-sm transition-all group">
-                <span className="material-symbols-outlined text-[18px] group-hover:text-primary-container">
-                  fork_right
-                </span>
-                <span>Fork</span>
-                <span className="bg-surface-container-highest px-1.5 rounded text-xs text-on-surface-variant ml-1">
-                  4
-                </span>
-              </button>
+          <div className="repo-actions-header">
+            <button className={`star-button ${isStarred ? "starred" : ""}`} onClick={toggleStar} disabled={busy}>
+              <span>{isStarred ? "★ Starred" : "☆ Star"}</span>
+              <span className="star-count">{repo.stars?.length || 0}</span>
+            </button>
+            <div className="stat-pill">
+              <span>Fork</span>
+              <span className="count-badge">0</span>
             </div>
           </div>
+        </div>
 
-          <p className="text-on-surface-variant font-body-base max-w-3xl mb-lg">
-            {repo.description || "No description provided."}
-          </p>
+        {/* Tab Navigation */}
+        <nav className="repo-tabs">
+          <button className={tab === "code" ? "active" : ""} onClick={() => setTab("code")}>
+            💻 Code
+          </button>
+          <button className={tab === "commits" ? "active" : ""} onClick={() => setTab("commits")}>
+            📜 Commits <span>{repo.commits?.length || 1}</span>
+          </button>
+          <button className={tab === "issues" ? "active" : ""} onClick={() => setTab("issues")}>
+            🐛 Issues <span>{repo.issues?.length || 0}</span>
+          </button>
+          <button className={tab === "settings" ? "active" : ""} onClick={() => setTab("settings")}>
+            ⚙️ Settings
+          </button>
+        </nav>
 
-          {/* Repo Tabs */}
-          <div className="border-b border-outline-variant flex gap-lg font-body-sm text-body-sm">
-            <button
-              onClick={() => setActiveTab("code")}
-              className={`flex items-center gap-2 pb-2 px-1 transition-colors ${
-                activeTab === "code"
-                  ? "text-primary font-bold border-b-2 border-primary"
-                  : "text-on-surface-variant hover:text-on-surface"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[18px]">code</span>
-              Code ({repo.content?.length || 0})
-            </button>
+        {error && <div className="notice notice-error">{error}</div>}
 
-            <button
-              onClick={() => setActiveTab("issues")}
-              className={`flex items-center gap-2 pb-2 px-1 transition-colors ${
-                activeTab === "issues"
-                  ? "text-primary font-bold border-b-2 border-primary"
-                  : "text-on-surface-variant hover:text-on-surface"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[18px]">error</span>
-              Issues
-              <span className="bg-surface-container-highest px-1.5 rounded-full text-xs">
-                {repo.issues?.length || 0}
-              </span>
-            </button>
-
-            {isOwner && (
-              <button
-                onClick={() => setActiveTab("settings")}
-                className={`flex items-center gap-2 pb-2 px-1 transition-colors ${
-                  activeTab === "settings"
-                    ? "text-primary font-bold border-b-2 border-primary"
-                    : "text-on-surface-variant hover:text-on-surface"
-                }`}
-              >
-                <span className="material-symbols-outlined text-[18px]">settings</span>
-                Settings
-              </button>
-            )}
-          </div>
-        </header>
-
-        {/* TAB 1: CODE */}
-        {activeTab === "code" && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-lg">
-            <div className="lg:col-span-9 flex flex-col gap-sm">
-              {/* Commit Bar */}
-              <div className="bg-surface-container-low border border-outline-variant rounded-t-lg p-md flex items-center justify-between">
-                <div className="flex items-center gap-sm">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-primary-container to-secondary flex items-center justify-center font-bold text-xs text-on-primary-container">
-                    {(repo.owner?.username || "U").charAt(0).toUpperCase()}
-                  </div>
-                  <span className="font-body-sm font-bold text-on-surface">
-                    {repo.owner?.username || "owner"}
-                  </span>
-                  <span className="text-on-surface-variant font-body-sm truncate max-w-[200px] sm:max-w-md">
-                    Initial repository setup and content push
-                  </span>
+        {/* CODE TAB */}
+        {tab === "code" && (
+          <section className="repo-content">
+            <div className="repo-main">
+              <div className="file-toolbar">
+                <div className="branch-selector">
+                  <span className="branch-pill">🌿 main</span>
                 </div>
-                <div className="flex items-center gap-sm font-code-sm text-code-sm">
-                  <span className="text-on-surface-variant hidden sm:inline">Just now</span>
-                  <span className="text-primary hover:underline font-mono">main</span>
-                </div>
-              </div>
-
-              {/* File List */}
-              <div className="border-x border-b border-outline-variant rounded-b-lg bg-surface flex flex-col">
-                {repo.content && repo.content.length > 0 ? (
-                  repo.content.map((file, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-sm hover:bg-surface-container-low transition-colors border-b border-outline-variant/50 group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-outline">
-                          description
-                        </span>
-                        <span className="font-code-sm text-code-sm text-on-surface font-mono">
-                          {file}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-md font-code-sm text-code-sm text-on-surface-variant">
-                        <span className="hidden sm:inline">Added file</span>
-                        {isOwner && (
-                          <button
-                            onClick={() => handleDeleteFile(file)}
-                            className="opacity-0 group-hover:opacity-100 hover:text-error transition-all p-1"
-                            title="Delete file"
-                          >
-                            <span className="material-symbols-outlined text-[16px]">
-                              delete
-                            </span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-md text-on-surface-variant font-body-sm text-center">
-                    No files added yet.
-                  </div>
+                {canManage && (
+                  <button className="button button-small button-primary" onClick={() => setShowNewFileModal(true)}>
+                    + Add File
+                  </button>
                 )}
               </div>
 
-              {/* ADD FILE FORM - ONLY OWNER */}
-              {isOwner ? (
-                <form
-                  onSubmit={handleAddFile}
-                  className="mt-md bg-surface-container-low border border-outline-variant rounded-lg p-md"
-                >
-                  <h4 className="font-headline-sm text-on-surface font-bold mb-xs">
-                    Add New File
-                  </h4>
-                  <div className="flex gap-sm mt-sm">
+              {/* Latest commit banner */}
+              {repo.commits && repo.commits.length > 0 && (
+                <div className="commit-banner">
+                  <span className="commit-author-avatar">R</span>
+                  <span className="commit-message-text">{repo.commits[repo.commits.length - 1].message}</span>
+                  <span className="commit-sha">#{repo.commits[repo.commits.length - 1].id}</span>
+                  <span className="commit-date">{new Date(repo.commits[repo.commits.length - 1].date).toLocaleDateString()}</span>
+                </div>
+              )}
+
+              {/* File List Browser */}
+              <div className="file-list">
+                {repo.content?.length ? (
+                  repo.content.map((item) => (
+                    <div className="file-row clickable-row" key={item} onClick={() => handleOpenFile(item)}>
+                      <div className="file-name-col">
+                        <span className="file-icon">📄</span>
+                        <code className="file-link-name">{item}</code>
+                      </div>
+                      <span className="file-commit-preview">Updated file</span>
+                      {canManage && (
+                        <button
+                          className="icon-action"
+                          title="Remove file"
+                          disabled={busy}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`Delete ${item}?`)) {
+                              action(() => api.put(`/repo/update/${repoId}`, { removeContent: item }));
+                            }
+                          }}
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="empty-files">This repository has no files yet. Click "+ Add File" to get started.</div>
+                )}
+              </div>
+
+              {/* README.md Preview Section */}
+              {readmeFile && (
+                <div className="readme-container">
+                  <div className="readme-header">
+                    <span>📖 README.md</span>
+                  </div>
+                  <div className="readme-body">
+                    <pre className="readme-text">{readmeFile.code || `# ${repo.name}\n\n${repo.description || ""}`}</pre>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <aside className="about-card">
+              <h2>About</h2>
+              <p>{repo.description || "No description provided."}</p>
+              <div className="about-meta">
+                <div>● {repo.visibility === false ? "Private repository" : "Public repository"}</div>
+                <div>⭐ {repo.stars?.length || 0} stars</div>
+                <div>📜 {repo.commits?.length || 1} commits</div>
+              </div>
+            </aside>
+          </section>
+        )}
+
+        {/* COMMITS TAB */}
+        {tab === "commits" && (
+          <section className="commits-section">
+            <h2>Commit History</h2>
+            <div className="commits-timeline">
+              {(repo.commits || []).slice().reverse().map((c, idx) => (
+                <div className="commit-item" key={c.id || idx}>
+                  <div className="commit-badge">git</div>
+                  <div className="commit-info">
+                    <strong className="commit-title">{c.message}</strong>
+                    <div className="commit-sub">
+                      <span>{c.authorName || "Author"}</span> committed on {new Date(c.date).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="commit-hash"><code>{c.id}</code></div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ISSUES TAB */}
+        {tab === "issues" && (
+          <section className="issues-layout">
+            <div>
+              <h2>{repo.issues?.length || 0} Issues</h2>
+              {repo.issues?.length ? (
+                <div className="issue-list">
+                  {repo.issues.map((item) => (
+                    <IssueRow key={item._id} item={item} canManage={canManage} action={action} currentUserId={currentUserId} />
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state compact">
+                  <h2>No issues yet</h2>
+                  <p>Issues help you track work, ideas, and bugs.</p>
+                </div>
+              )}
+            </div>
+            {canManage && (
+              <form className="panel issue-form" onSubmit={createIssue}>
+                <h2>Open a new issue</h2>
+                <label>
+                  Title
+                  <input required value={issue.title} onChange={(e) => setIssue({ ...issue, title: e.target.value })} placeholder="Short, descriptive title" />
+                </label>
+                <label>
+                  Description
+                  <textarea required value={issue.description} onChange={(e) => setIssue({ ...issue, description: e.target.value })} placeholder="Describe the issue" />
+                </label>
+                <button disabled={busy} className="button button-primary">Submit new issue</button>
+              </form>
+            )}
+          </section>
+        )}
+
+        {/* SETTINGS TAB */}
+        {tab === "settings" && (
+          <section className="settings-grid">
+            <form className="panel" onSubmit={updateDescription}>
+              <h2>Repository details</h2>
+              <label>
+                Description
+                <input value={description} disabled={!canManage} onChange={(e) => setDescription(e.target.value)} />
+              </label>
+              {canManage && <button disabled={busy} className="button button-primary">Save changes</button>}
+            </form>
+            {canManage && (
+              <section className="panel danger-panel">
+                <h2>Danger zone</h2>
+                <div>
+                  <span>
+                    <strong>Change visibility</strong>
+                    <small>Repository is currently {repo.visibility === false ? "private" : "public"}.</small>
+                  </span>
+                  <button disabled={busy} className="button" onClick={() => action(() => api.patch(`/repo/toggle/${repoId}`))}>
+                    Toggle visibility
+                  </button>
+                </div>
+                <div>
+                  <span>
+                    <strong>Delete this repository</strong>
+                    <small>Once deleted, there is no way to restore it.</small>
+                  </span>
+                  <button
+                    disabled={busy}
+                    className="button button-danger"
+                    onClick={() => {
+                      if (window.confirm(`Delete ${repo.name}? This cannot be undone.`)) {
+                        action(() => api.delete(`/repo/delete/${repoId}`)).then((ok) => ok && navigate("/"));
+                      }
+                    }}
+                  >
+                    Delete repository
+                  </button>
+                </div>
+              </section>
+            )}
+          </section>
+        )}
+
+        {/* FILE VIEWER & EDITOR MODAL */}
+        {selectedFile && (
+          <div className="modal-backdrop" onClick={() => setSelectedFile(null)}>
+            <div className="modal-content file-viewer-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>📄 {selectedFile}</h3>
+                <button className="close-modal-btn" onClick={() => setSelectedFile(null)}>✕</button>
+              </div>
+              <div className="modal-body">
+                {isEditingFile ? (
+                  <form onSubmit={handleSaveFileCode} className="edit-code-form">
+                    <label>File Code Editor</label>
+                    <textarea
+                      className="code-textarea"
+                      value={fileCodeState}
+                      onChange={(e) => setFileCodeState(e.target.value)}
+                      rows={12}
+                    />
+                    <label>Commit Message</label>
                     <input
                       type="text"
-                      placeholder="e.g. index.js, README.md, style.css"
-                      className="input-glass flex-1 rounded px-sm py-sm font-code-base text-code-base text-on-surface placeholder-outline"
-                      value={fileName}
-                      onChange={(e) => setFileName(e.target.value)}
+                      value={fileCommitMsg}
+                      onChange={(e) => setFileCommitMsg(e.target.value)}
+                      placeholder="e.g. Update index.js logic"
                       required
                     />
-                    <button
-                      type="submit"
-                      disabled={addingFile}
-                      className="btn-primary rounded px-lg py-sm font-body-sm font-semibold flex items-center gap-xs disabled:opacity-50"
-                    >
-                      <span className="material-symbols-outlined text-sm">add</span>
-                      {addingFile ? "Adding..." : "+ Add File"}
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <p className="text-on-surface-variant italic text-sm mt-sm">
-                  🔒 Only the repository owner can add or remove files.
-                </p>
-              )}
-            </div>
-
-            {/* Sidebar / About */}
-            <div className="lg:col-span-3 flex flex-col gap-lg">
-              <div className="bg-surface-container-low border border-outline-variant rounded-lg p-md">
-                <h3 className="font-headline-sm text-on-surface font-bold mb-sm">About</h3>
-                <p className="text-on-surface-variant font-body-sm mb-md">
-                  {repo.description || "No description provided."}
-                </p>
-                <div className="flex items-center gap-2 text-on-surface-variant font-body-sm mb-2 hover:text-primary transition-colors cursor-pointer">
-                  <span className="material-symbols-outlined text-[18px]">link</span>
-                  <a href="#">revix.dev/{repo.name}</a>
-                </div>
-                <div className="flex items-center gap-2 text-on-surface-variant font-body-sm mb-4">
-                  <span className="material-symbols-outlined text-[18px]">book</span>
-                  <span>Readme</span>
-                </div>
-                <h4 className="font-body-sm text-on-surface font-bold mb-xs mt-md">
-                  Languages
-                </h4>
-                <div className="w-full bg-surface-container-highest rounded-full h-2 mb-2 flex overflow-hidden">
-                  <div className="bg-[#dea584] h-full" style={{ width: "70%" }}></div>
-                  <div className="bg-yellow-400 h-full" style={{ width: "30%" }}></div>
-                </div>
-                <ul className="font-code-sm text-code-sm text-on-surface-variant space-y-1">
-                  <li className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#dea584]"></span> JavaScript 70%
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-yellow-400"></span> HTML/CSS 30%
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 2: ISSUES */}
-        {activeTab === "issues" && (
-          <div className="bg-surface-container-low border border-outline-variant rounded-lg p-md">
-            <div className="flex justify-between items-center mb-md border-b border-outline-variant pb-sm">
-              <h3 className="font-headline-sm text-on-surface font-bold">
-                Issues ({repo.issues?.length || 0})
-              </h3>
-              <div className="flex gap-xs bg-surface p-1 rounded-md border border-outline-variant">
-                <button
-                  className={`px-3 py-1 text-xs rounded transition-colors ${
-                    issueFilter === "all" ? "bg-surface-container-high text-on-surface font-bold" : "text-on-surface-variant"
-                  }`}
-                  onClick={() => setIssueFilter("all")}
-                >
-                  All
-                </button>
-                <button
-                  className={`px-3 py-1 text-xs rounded transition-colors ${
-                    issueFilter === "open" ? "bg-surface-container-high text-on-surface font-bold" : "text-on-surface-variant"
-                  }`}
-                  onClick={() => setIssueFilter("open")}
-                >
-                  Open
-                </button>
-                <button
-                  className={`px-3 py-1 text-xs rounded transition-colors ${
-                    issueFilter === "closed" ? "bg-surface-container-high text-on-surface font-bold" : "text-on-surface-variant"
-                  }`}
-                  onClick={() => setIssueFilter("closed")}
-                >
-                  Closed
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-sm mb-lg">
-              {filteredIssues.length > 0 ? (
-                filteredIssues.map((issue) => {
-                  const issueObj = typeof issue === "string" ? { _id: issue, title: issue } : issue;
-                  const isClosed = issueObj.status === "closed";
-
-                  return (
-                    <div
-                      key={issueObj._id}
-                      className="p-md bg-surface border border-outline-variant rounded-md flex justify-between items-start"
-                    >
-                      <div>
-                        <div className="flex items-center gap-sm">
-                          <span
-                            className={`material-symbols-outlined text-[18px] ${
-                              isClosed ? "text-tertiary-container" : "text-secondary"
-                            }`}
-                          >
-                            {isClosed ? "check_circle" : "error"}
-                          </span>
-                          <h4
-                            className={`font-body-base font-bold text-on-surface ${
-                              isClosed ? "line-through opacity-70" : ""
-                            }`}
-                          >
-                            {issueObj.title || "Untitled Issue"}
-                          </h4>
-                          <span
-                            className={`text-xs px-2 py-0.5 rounded-full border ${
-                              isClosed
-                                ? "bg-tertiary-container/20 text-tertiary-container border-tertiary-container/40"
-                                : "bg-secondary-container/20 text-secondary border-secondary-container/40"
-                            }`}
-                          >
-                            {isClosed ? "Closed" : "Open"}
-                          </span>
-                        </div>
-                        {issueObj.description && (
-                          <p className="text-on-surface-variant text-body-sm mt-1 ml-6">
-                            {issueObj.description}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-sm">
-                        <button
-                          onClick={() => handleToggleIssueStatus(issueObj._id, issueObj.status)}
-                          className="px-2 py-1 border border-outline-variant rounded text-xs text-on-surface-variant hover:text-on-surface"
-                        >
-                          {isClosed ? "Reopen" : "Close"}
-                        </button>
-                        <button
-                          onClick={() => handleDeleteIssue(issueObj._id)}
-                          className="text-error hover:opacity-80 p-1"
-                          title="Delete Issue"
-                        >
-                          <span className="material-symbols-outlined text-[18px]">
-                            delete
-                          </span>
-                        </button>
-                      </div>
+                    <div className="modal-actions">
+                      <button type="button" className="button" onClick={() => setIsEditingFile(false)}>Cancel</button>
+                      <button disabled={busy} className="button button-primary">Commit Changes</button>
                     </div>
-                  );
-                })
-              ) : (
-                <p className="text-on-surface-variant italic text-sm">No issues found.</p>
-              )}
+                  </form>
+                ) : (
+                  <div className="code-display-container">
+                    {canManage && (
+                      <div className="code-display-toolbar">
+                        <button className="button button-small" onClick={() => setIsEditingFile(true)}>✏️ Edit File</button>
+                      </div>
+                    )}
+                    <pre className="code-preview-block">
+                      <code>{fileCodeState}</code>
+                    </pre>
+                  </div>
+                )}
+              </div>
             </div>
-
-            {/* CREATE ISSUE FORM */}
-            <form onSubmit={handleCreateIssue} className="border-t border-outline-variant pt-md">
-              <h4 className="font-headline-sm text-on-surface font-bold mb-xs">
-                Submit an Issue
-              </h4>
-              <input
-                type="text"
-                placeholder="Issue Title"
-                className="input-glass w-full rounded px-sm py-sm font-body-base text-on-surface mb-sm"
-                value={issueTitle}
-                onChange={(e) => setIssueTitle(e.target.value)}
-                required
-              />
-              <textarea
-                placeholder="Describe the bug or feature request..."
-                className="input-glass w-full rounded px-sm py-sm font-body-base text-on-surface mb-sm h-20 resize-none"
-                value={issueDesc}
-                onChange={(e) => setIssueDesc(e.target.value)}
-                required
-              />
-              <button
-                type="submit"
-                disabled={creatingIssue}
-                className="btn-primary rounded px-lg py-sm font-body-sm font-semibold disabled:opacity-50"
-              >
-                {creatingIssue ? "Submitting..." : "Submit Issue"}
-              </button>
-            </form>
           </div>
         )}
 
-        {/* TAB 3: SETTINGS */}
-        {activeTab === "settings" && isOwner && (
-          <div className="bg-surface-container-low border border-outline-variant rounded-lg p-md flex flex-col gap-lg">
-            <h3 className="font-headline-sm text-on-surface font-bold">
-              Repository Settings
-            </h3>
-
-            <div className="p-md bg-surface border border-outline-variant rounded-md">
-              <h4 className="font-body-base font-bold text-on-surface mb-xs">
-                Visibility
-              </h4>
-              <p className="text-on-surface-variant text-body-sm mb-sm">
-                Current Status:{" "}
-                <strong className="text-on-surface font-bold">
-                  {repo.visibility ? "Public" : "Private"}
-                </strong>
-              </p>
-              <button
-                onClick={handleToggleVisibility}
-                className="px-md py-1.5 border border-outline-variant rounded text-body-sm text-on-surface hover:border-primary-container"
-              >
-                Switch to {repo.visibility ? "Private" : "Public"}
-              </button>
-            </div>
-
-            <div className="p-md bg-error-container/10 border border-error-container/40 rounded-md">
-              <h4 className="font-body-base font-bold text-error mb-xs">Danger Zone</h4>
-              <p className="text-on-surface-variant text-body-sm mb-sm">
-                Deleting this repository is permanent and cannot be undone.
-              </p>
-              <button
-                onClick={handleDeleteRepo}
-                className="bg-error-container text-on-error-container px-md py-1.5 rounded font-body-sm font-semibold hover:bg-error hover:text-on-error transition-colors"
-              >
-                Delete Repository
-              </button>
+        {/* CREATE NEW FILE MODAL */}
+        {showNewFileModal && (
+          <div className="modal-backdrop" onClick={() => setShowNewFileModal(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Create New File</h3>
+                <button className="close-modal-btn" onClick={() => setShowNewFileModal(false)}>✕</button>
+              </div>
+              <form onSubmit={handleCreateNewFile} className="new-file-form">
+                <label>File Path (e.g. src/App.js or README.md)
+                  <input required value={newFilePath} onChange={(e) => setNewFilePath(e.target.value)} placeholder="src/main.js" />
+                </label>
+                <label>Initial Code Content
+                  <textarea rows={6} className="code-textarea" value={newFileCode} onChange={(e) => setNewFileCode(e.target.value)} placeholder="// Write code here..." />
+                </label>
+                <label>Commit Message
+                  <input value={newFileCommitMsg} onChange={(e) => setNewFileCommitMsg(e.target.value)} placeholder="Add new file" />
+                </label>
+                <div className="modal-actions">
+                  <button type="button" className="button" onClick={() => setShowNewFileModal(false)}>Cancel</button>
+                  <button disabled={busy} className="button button-primary">Commit New File</button>
+                </div>
+              </form>
             </div>
           </div>
         )}
       </main>
-    </div>
+    </>
   );
-};
+}
 
-export default RepoDetail;
+function IssueRow({ item, canManage, action, currentUserId }) {
+  const [editing, setEditing] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [form, setForm] = useState({ title: item.title, description: item.description, status: item.status });
+  const [commentText, setCommentText] = useState("");
+
+  const save = (e) => {
+    e.preventDefault();
+    action(() => api.put(`/issue/update/${item._id}`, form)).then((ok) => ok && setEditing(false));
+  };
+
+  const addComment = (e) => {
+    e.preventDefault();
+    if (!commentText.trim()) return;
+    action(() => api.post(`/issue/comment/${item._id}`, {
+      text: commentText.trim(),
+      user: currentUserId,
+      username: "Contributor"
+    })).then((ok) => ok && setCommentText(""));
+  };
+
+  const toggleStatus = () => {
+    const newStatus = item.status === "closed" ? "open" : "closed";
+    action(() => api.put(`/issue/update/${item._id}`, { status: newStatus }));
+  };
+
+  if (editing)
+    return (
+      <form className="issue-edit" onSubmit={save}>
+        <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+        <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+        <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+          <option value="open">Open</option>
+          <option value="closed">Closed</option>
+        </select>
+        <button className="button button-small button-primary">Save</button>
+        <button type="button" className="button button-small" onClick={() => setEditing(false)}>Cancel</button>
+      </form>
+    );
+
+  return (
+    <article className="issue-card-block">
+      <div className="issue-row">
+        <div>
+          <h3>
+            <span className={item.status === "closed" ? "status-dot closed" : "status-dot"} />
+            {item.title}
+          </h3>
+          <p>
+            #{item._id.slice(-5)} · {item.status || "open"} · {item.description}
+          </p>
+        </div>
+        <div className="issue-actions">
+          <button className="text-button" onClick={() => setShowComments(!showComments)}>
+            💬 {item.comments?.length || 0} Comments
+          </button>
+          {canManage && (
+            <>
+              <button className="text-button" onClick={toggleStatus}>
+                {item.status === "closed" ? "Re-open" : "Close"}
+              </button>
+              <button className="text-button" onClick={() => setEditing(true)}>Edit</button>
+              <button
+                className="text-button delete-text"
+                onClick={() => {
+                  if (window.confirm("Delete this issue?")) action(() => api.delete(`/issue/delete/${item._id}`));
+                }}
+              >
+                Delete
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {showComments && (
+        <div className="issue-comments-thread">
+          <h4>Discussion</h4>
+          <div className="comments-list">
+            {(item.comments || []).map((c, i) => (
+              <div className="comment-bubble" key={i}>
+                <div className="comment-head">
+                  <strong>{c.username || "User"}</strong>
+                  <span className="muted">{new Date(c.createdAt).toLocaleString()}</span>
+                </div>
+                <div className="comment-text">{c.text}</div>
+              </div>
+            ))}
+            {(!item.comments || item.comments.length === 0) && (
+              <div className="muted">No comments yet. Start the conversation!</div>
+            )}
+          </div>
+
+          <form onSubmit={addComment} className="add-comment-form">
+            <input
+              required
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              placeholder="Leave a comment..."
+            />
+            <button className="button button-small button-primary">Comment</button>
+          </form>
+        </div>
+      )}
+    </article>
+  );
+}
+

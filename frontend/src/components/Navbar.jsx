@@ -1,101 +1,67 @@
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import { useAuth } from "../authContext";
-import axios from "axios";
+import "./navbar.css";
 
-const Navbar = () => {
-  const { setCurrentUser } = useAuth();
+const GithubMark = () => (
+  <svg className="github-svg" viewBox="0 0 16 16" width="24" height="24" aria-hidden="true" fill="currentColor">
+    <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path>
+  </svg>
+);
+
+export default function Navbar() {
+  const { signOut } = useAuth();
   const navigate = useNavigate();
-  const [username, setUsername] = useState("User");
+  const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    const userId = localStorage.getItem("userId");
-    if (userId) {
-      axios
-        .get(`http://localhost:3002/userProfile/${userId}`)
-        .then((res) => {
-          const user = res.data.user || res.data;
-          if (user?.username) setUsername(user.username);
-        })
-        .catch(() => {});
-    }
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userId");
-    setCurrentUser(null);
+  const logout = () => {
+    signOut();
     navigate("/auth");
   };
 
-  const getInitial = (name) => {
-    return name ? name.charAt(0).toUpperCase() : "U";
+  const handleSearch = (e) => {
+    if (e.key === "Enter" && searchTerm.trim()) {
+      navigate(`/?q=${encodeURIComponent(searchTerm.trim())}`);
+    }
   };
 
   return (
-    <nav className="bg-surface font-body-base text-body-base fixed top-0 w-full z-50 border-b border-outline-variant flex justify-between items-center px-lg py-sm h-16 max-w-full">
-      <div className="flex items-center gap-lg">
-        <Link
-          to="/"
-          className="font-headline-md text-headline-md font-bold text-on-surface flex items-center gap-2"
-        >
-          <span className="material-symbols-outlined text-primary-container text-2xl">
-            terminal
-          </span>
-          REVIX
+    <header className="site-header">
+      <div className="nav-inner">
+        <Link className="brand" to="/">
+          <img src="/logo.png" alt="Revix Logo" className="brand-logo-img" />
+          <span>Revix</span>
         </Link>
-        <div className="hidden md:flex gap-lg">
-          <Link
-            to="/"
-            className="text-primary font-bold border-b-2 border-primary pb-1 transition-colors duration-200"
-          >
-            Repositories
-          </Link>
-          <Link
-            to="/profile"
-            className="text-on-surface-variant hover:text-primary transition-colors duration-200"
-          >
-            Profile
-          </Link>
-        </div>
-      </div>
 
-      <div className="flex items-center gap-md">
-        <div className="relative hidden sm:block">
-          <span className="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-outline text-sm">
-            search
-          </span>
+        <div className="nav-search-container">
           <input
-            className="bg-surface-container-low border-outline-variant text-on-surface rounded-md pl-8 pr-4 py-1 text-sm focus:border-primary-container focus:ring-1 focus:ring-primary-container/30 w-64 transition-all"
-            placeholder="Search repositories..."
             type="text"
+            className="nav-search-input"
+            placeholder="Search repositories..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={handleSearch}
           />
         </div>
 
-        <button
-          onClick={() => navigate("/create")}
-          className="bg-[#238636] hover:bg-[#39d353] text-[#f0f6fc] px-4 py-1.5 rounded-md font-body-sm text-body-sm transition-colors duration-200 hidden sm:block"
-        >
-          + Create
-        </button>
+        <nav className="primary-nav" aria-label="Main navigation">
+          <NavLink to="/">Dashboard</NavLink>
+          <NavLink to="/new">New repository</NavLink>
+          <NavLink to="/profile">Profile</NavLink>
+        </nav>
 
-        <button
-          onClick={handleLogout}
-          className="text-on-surface-variant hover:text-on-surface text-sm ml-2 font-medium"
-        >
-          Logout
-        </button>
-
-        <div
-          onClick={() => navigate("/profile")}
-          className="w-8 h-8 rounded-full border border-outline-variant ml-2 bg-gradient-to-tr from-primary-container to-secondary flex items-center justify-center font-bold text-on-primary-container cursor-pointer text-sm"
-          title={`Profile (${username})`}
-        >
-          {getInitial(username)}
+        <div className="nav-actions">
+          <Link className="nav-create" to="/new">
+            + <span>Create</span>
+          </Link>
+          <button className="avatar-button" onClick={() => navigate("/profile")} title="Open profile">
+            R
+          </button>
+          <button className="text-button nav-signout" onClick={logout}>
+            Sign out
+          </button>
         </div>
       </div>
-    </nav>
+    </header>
   );
-};
-
-export default Navbar;
+}

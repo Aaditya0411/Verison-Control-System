@@ -17,15 +17,35 @@ async function createRepository(req, res) {
             return res.status(400).json({ error: "Invalid User Id" })
         }
 
-        // if(!mongoose.Types.ObjectId.isValid(issues)){
-        //     return res.status(400).json({error : "Invalid User Id"})
-        // }
+        const initialContent = Array.isArray(content) ? content : [];
+        if (!initialContent.includes("README.md")) {
+            initialContent.unshift("README.md");
+        }
+
+        const files = initialContent.map(filePath => ({
+            path: filePath,
+            code: filePath.toLowerCase().includes("readme")
+                ? `# ${name}\n\n${description || "Welcome to your new repository!"}`
+                : `// ${filePath}\n\nconsole.log("Hello from ${filePath}");`,
+            updatedAt: new Date()
+        }));
+
+        const commits = [{
+            id: Math.random().toString(36).substring(2, 9),
+            message: "Initial commit",
+            author: new mongoose.Types.ObjectId(owner),
+            authorName: "Author",
+            date: new Date()
+        }];
 
         const newRepository = new Repository({
             owner: new mongoose.Types.ObjectId(owner),
             name,
-            issues,
-            content,
+            issues: issues || [],
+            content: initialContent,
+            files,
+            commits,
+            stars: [],
             description,
             visibility
         });
@@ -134,7 +154,7 @@ async function fetchRepositoryForCurrentUser(req, res) {
 async function updateRepositoryById(req, res) {
     const { id } = req.params;
 
-    const { content, description, removeContent } = req.body;
+    const { content, description, removeContent, fileCode, commitMessage, authorId, authorName } = req.body;
 
     try {
 
@@ -146,12 +166,43 @@ async function updateRepositoryById(req, res) {
             });
         }
 
-        if (Array.isArray(content)) {
-            repository.content = content;
-        } else if (removeContent) {
+        if (removeContent) {
             repository.content = repository.content.filter(item => item !== removeContent);
+            repository.files = (repository.files || []).filter(f => f.path !== removeContent);
+            repository.commits.push({
+                id: Math.random().toString(36).substring(2, 9),
+                message: commitMessage || `Delete ${removeContent}`,
+                author: authorId || repository.owner,
+                authorName: authorName || "Contributor",
+                date: new Date()
+            });
         } else if (content && typeof content === "string") {
-            repository.content.push(content);
+            const targetPath = content.trim();
+            if (!repository.content.includes(targetPath)) {
+                repository.content.push(targetPath);
+            }
+
+            let fileObj = (repository.files || []).find(f => f.path === targetPath);
+            if (fileObj) {
+                if (fileCode !== undefined) fileObj.code = fileCode;
+                fileObj.updatedAt = new Date();
+            } else {
+                repository.files.push({
+                    path: targetPath,
+                    code: fileCode !== undefined ? fileCode : (targetPath.toLowerCase().includes("readme") ? `# ${repository.name}\n\n${repository.description || ""}` : `// ${targetPath}`),
+                    updatedAt: new Date()
+                });
+            }
+
+            repository.commits.push({
+                id: Math.random().toString(36).substring(2, 9),
+                message: commitMessage || `Update ${targetPath}`,
+                author: authorId || repository.owner,
+                authorName: authorName || "Contributor",
+                date: new Date()
+            });
+        } else if (Array.isArray(content)) {
+            repository.content = content;
         }
 
         if (description !== undefined) {
@@ -172,14 +223,36 @@ async function updateRepositoryById(req, res) {
         });
 
     }
+}
 
+async function toggleStarRepository(req, res) {
+    const { id } = req.params;
+    const { userId } = req.body;
 
+    try {
+        const repository = await Repository.findById(id);
+        if (!repository) {
+            return res.status(404).json({ message: "Repository not found" });
+        }
+
+        if (!repository.stars) repository.stars = [];
+        const index = repository.stars.findIndex(s => String(s) === String(userId));
+        if (index > -1) {
+            repository.stars.splice(index, 1);
+        } else {
+            repository.stars.push(userId);
+        }
+
+        const updated = await repository.save();
+        res.json({ message: "Star status updated", repository: updated });
+    } catch (error) {
+        console.error("Error toggling star:", error.message);
+        res.status(500).json({ message: "Server Error" });
+    }
 }
 
 async function toggleVisibilityById(req, res) {
     const { id } = req.params;
-
-
 
     try {
 
@@ -241,7 +314,7 @@ module.exports = {
     fetchRepositoryByName,
     fetchRepositoryForCurrentUser,
     updateRepositoryById,
+    toggleStarRepository,
     toggleVisibilityById,
     deleteRepositoryById
-
 }

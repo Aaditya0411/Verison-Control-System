@@ -27,7 +27,23 @@ const RepositorySchema = new Schema({
             type :   Schema.Types.ObjectId,
             ref : "Issue",
         }
-    ]
+    ],
+    files: [{
+        path: { type: String, required: true },
+        code: { type: String, default: "" },
+        updatedAt: { type: Date, default: Date.now }
+    }],
+    commits: [{
+        id: { type: String },
+        message: { type: String },
+        author: { type: Schema.Types.ObjectId, ref: "User" },
+        authorName: { type: String },
+        date: { type: Date, default: Date.now }
+    }],
+    stars: [{
+        type: Schema.Types.ObjectId,
+        ref: "User"
+    }]
 });
 
 const Repository = mongoose.model("Repository" ,RepositorySchema );

@@ -20,7 +20,16 @@ const IssueSchema = new Schema({
         ref: "Repository" ,
         required : true,
     },
-
+    author: {
+        type: Schema.Types.ObjectId,
+        ref: "User"
+    },
+    comments: [{
+        user: { type: Schema.Types.ObjectId, ref: "User" },
+        username: { type: String, default: "User" },
+        text: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now }
+    }]
 });
 
 const Issue = mongoose.model ("Issue" , IssueSchema);

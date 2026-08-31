@@ -1,23 +1,25 @@
-import React, {createContext, useState, useEffect, useContext} from 'react';
+/* eslint-disable react/prop-types, react-refresh/only-export-components */
+import { createContext, useContext, useMemo, useState } from "react";
+import React from "react";
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
-export const useAuth = ()=>{
-    return useContext(AuthContext);
+export function AuthProvider({ children }) {
+  const [currentUser, setCurrentUser] = useState(() => localStorage.getItem("userId"));
+  const value = useMemo(() => ({
+    currentUser,
+    setCurrentUser,
+    signOut: () => {
+      localStorage.removeItem("token");
+      localStorage.removeItem("userId");
+      setCurrentUser(null);
+    },
+  }), [currentUser]);
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export const AuthProvider = ({children})=>{
-    const [currentUser, setCurrentUser] = useState(null);
-    useEffect(()=>{
-        const userId = localStorage.getItem('userId');
-        if(userId){
-            setCurrentUser(userId);
-        }
-    }, []);
-
-    const value = {
-        currentUser, setCurrentUser
-    }
-
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
+  return context;
 }
