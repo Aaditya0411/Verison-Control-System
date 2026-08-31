@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const dotenv = require('dotenv');
 const cors = require("cors");
 const mongoose = require('mongoose');
@@ -131,6 +132,11 @@ function startServer() {
     app.use(cors({ origin: "*" }));
 
     app.use("/", mainRouter);
+
+    app.use(express.static(path.join(__dirname, "../frontend/dist")));
+    app.get("*", (req, res) => {
+        res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+    });
 
 
 
