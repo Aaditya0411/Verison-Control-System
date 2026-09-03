@@ -133,9 +133,18 @@ function startServer() {
 
     app.use("/", mainRouter);
 
-    app.use(express.static(path.join(__dirname, "../frontend/dist")));
-    app.use((req, res) => {
-        res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+    const distPath = path.resolve(__dirname, "../frontend/dist");
+    const indexPath = path.resolve(distPath, "index.html");
+
+    app.use(express.static(distPath));
+    app.use((req, res, next) => {
+        if (req.method !== "GET") return next();
+        res.sendFile(indexPath, (err) => {
+            if (err) {
+                console.error("Error sending index.html:", err);
+                res.status(404).send("Frontend build not found");
+            }
+        });
     });
 
 
