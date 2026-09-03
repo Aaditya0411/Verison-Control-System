@@ -1,0 +1,11 @@
+{
+  "name": "verison-control-system",
+  "version": "1.0.0",
+  "description": "Version Control System Full Stack App",
+  "main": "backend/index.js",
+  "scripts": {
+    "install:all": "npm install --prefix backend && npm install --prefix frontend",
+    "build": "npm run install:all && npm run build --prefix frontend",
+    "start": "npm start --prefix backend"
+  }
+}
