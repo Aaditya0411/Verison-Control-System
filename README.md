@@ -1,4 +1,4 @@
-# 🚀 Revix — Version Control System
+ # 🚀 Revix — Version Control System
 
 Revix is a full-stack **Version Control System (VCS)** built from scratch to understand and implement the core concepts behind modern version control platforms.
 
@@ -13,7 +13,7 @@ The project includes a command-line version control engine along with a web inte
 **Database:** MongoDB  
 **Storage:** AWS S3
 
-🔗 **Live Application:** http://52.202.129.198:3002/
+🔗 **Live Application:** http://52.202.129.198:3002/  ( service is stopped )
 
 🔗 **GitHub Repository:** https://github.com/Aaditya0411/Verison-Control-System
 
