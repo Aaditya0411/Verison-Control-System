@@ -1,4 +1,4 @@
- #Revix — Version Control System
+ # Revix — Version Control System
 
 Revix is a full-stack **Version Control System (VCS)** built from scratch to understand and implement the core concepts behind modern version control platforms.
 
